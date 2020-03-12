@@ -49,6 +49,7 @@ querydsl {
     jpa = true
     querydslSourcesDir = querydslDir
 }
+// 아래 설정을 추가하면 IDE에서 소스셋에 빌드해줌
 sourceSets {
     main.java.srcDir querydslDir
 }
