@@ -71,7 +71,8 @@ public class QuerydslBasicTest {
     @Test
     public void startQuerydsl() {
 //        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
-        QMember m = new QMember("m"); // QMember를 구분하는 이름 (Alias) 크게 중요하진 않음
+//        QMember m = new QMember("m"); // QMember를 구분하는 이름 (Alias) 크게 중요하진 않음
+        QMember m = QMember.member;
 
         // JDBC의 PrepareStatement로 자동으로 파라메터 바인딩을 해준다.
         // > SQL Injection도 방지됨.
