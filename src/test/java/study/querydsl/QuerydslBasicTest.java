@@ -187,6 +187,39 @@ public class QuerydslBasicTest {
         assertThat(member6.getUsername()).isEqualTo("member6");
         assertThat(memberNull.getUsername()).isNull();
     }
+
+    @Test
+    public void paging() {
+        // 데이터베이스 방언에 따라 다르게 실행된다.
+        List<Member> members = queryFactory
+                .selectFrom(member)
+                .orderBy(member.username.desc())
+                .offset(1)
+                .limit(2)
+                .fetch();
+
+        assertThat(members.size()).isEqualTo(2);
+    }
+
+    @Test
+    public void paging2() {
+        // totalCount가 필요할 경우 fetchResults() 사용
+        // 실무에서는 count쿼리와 페이징 쿼리가 다를경우가 있음
+        // 그런경우에는 fetchResults() 보다는 count쿼리를 분리할것
+        QueryResults<Member> results = queryFactory
+                .selectFrom(member)
+                .orderBy(member.username.desc())
+                .offset(1)
+                .limit(2)
+                .fetchResults();
+        long total = results.getTotal();
+        List<Member> members = results.getResults();
+
+        assertThat(total).isEqualTo(4);
+        assertThat(results.getLimit()).isEqualTo(2);
+        assertThat(results.getOffset()).isEqualTo(1);
+        assertThat(members.size()).isEqualTo(2);
+    }
 }
 
 
