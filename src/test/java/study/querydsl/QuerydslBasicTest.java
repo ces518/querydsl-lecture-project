@@ -13,6 +13,7 @@ import study.querydsl.entity.Team;
 import javax.persistence.EntityManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static study.querydsl.entity.QMember.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -72,7 +73,7 @@ public class QuerydslBasicTest {
     public void startQuerydsl() {
 //        JPAQueryFactory queryFactory = new JPAQueryFactory(em);
 //        QMember m = new QMember("m"); // QMember를 구분하는 이름 (Alias) 크게 중요하진 않음
-        QMember m = QMember.member;
+        QMember m = member;
 
         // JDBC의 PrepareStatement로 자동으로 파라메터 바인딩을 해준다.
         // > SQL Injection도 방지됨.
@@ -84,6 +85,34 @@ public class QuerydslBasicTest {
                 .fetchOne();
 
         assertThat(findMember.getUsername()).isEqualTo("member1");
+    }
+
+    @Test
+    public void search() {
+        Member findMember = queryFactory.
+                selectFrom(member)
+                .where(member.username.eq("member1")
+                        .and(member.age.eq(10)))
+                .fetchOne();
+
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+        assertThat(findMember.getAge()).isEqualTo(10);
+    }
+
+    @Test
+    public void searchAndParam() {
+        Member findMember = queryFactory.
+                selectFrom(member)
+                .where(
+                        member.username.eq("member1"),
+                        member.age.eq(10) // and 조건의 경우 파라메터를 ,로 구분하여 넘길경우 and 조건이 적용
+                        // null이 들어가게 되면 조건절에서 무시된다.
+                        // 동적쿼리 작성시 매우 깔끔하게 적용됨
+                )
+                .fetchOne();
+
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+        assertThat(findMember.getAge()).isEqualTo(10);
     }
 }
 
