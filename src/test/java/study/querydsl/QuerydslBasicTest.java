@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.entity.*;
 
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.PersistenceUnit;
 import javax.persistence.Query;
 
 import java.util.List;
@@ -369,6 +371,43 @@ public class QuerydslBasicTest {
         }
     }
 
+
+    @PersistenceUnit
+    EntityManagerFactory emf;
+
+    @Test
+    public void fetchJoinNo() {
+        em.flush();
+        em.clear();
+
+        // 멤버와 팀의 관계는 지연로딩 LAZY이다.
+        // 조회시 멤버만 조회되고, 팀은 조회되지 않음
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        // 로딩된 엔티티인지 를 판단
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+        assertThat(loaded).as("페치조인 미적용").isFalse();
+    }
+
+    @Test
+    public void fetchJoin() {
+        em.flush();
+        em.clear();
+
+        // 멤버 조회시 연관된 엔티티인 팀을 같이 가져온다.
+        Member findMember = queryFactory
+                .selectFrom(member)
+                .join(member.team, team).fetchJoin() // fetchJoin
+                .where(member.username.eq("member1"))
+                .fetchOne();
+
+        // 로딩된 엔티티인지 를 판단
+        boolean loaded = emf.getPersistenceUnitUtil().isLoaded(findMember.getTeam());
+        assertThat(loaded).as("페치조인 적용").isTrue();
+    }
 
 }
 
