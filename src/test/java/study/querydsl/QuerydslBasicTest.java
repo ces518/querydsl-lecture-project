@@ -2,6 +2,8 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -409,6 +411,137 @@ public class QuerydslBasicTest {
         assertThat(loaded).as("페치조인 적용").isTrue();
     }
 
+    /**
+     * 나이가 가장 많은 회원을 조회
+     */
+    @Test
+    public void subQuery() {
+        // Alias가 중복되면 안되는경우 별도로 생성
+        QMember memberSub = new QMember("memberSub");
+        List<Member> members = queryFactory.selectFrom(member)
+                .where(
+                        member.age.eq(
+                                JPAExpressions // JPAExpressions를 사용하여 서브쿼리 사용
+                                        .select(memberSub.age.max())
+                                        .from(memberSub)
+                        )
+                )
+                .fetch();
+
+        // 결과 목록에서 age값 검증
+        assertThat(members)
+                .extracting("age")
+                .containsExactly(40);
+    }
+
+    /**
+     * 나이가 평균 이상인 회원
+     */
+    @Test
+    public void subQueryGoe() {
+        QMember memberSub = new QMember("memberSub");
+        List<Member> members = queryFactory.selectFrom(member)
+                .where(
+                        member.age.goe(
+                                JPAExpressions // JPAExpressions를 사용하여 서브쿼리 사용
+                                        .select(memberSub.age.avg())
+                                        .from(memberSub)
+                        )
+                )
+                .fetch();
+
+        // 결과 목록에서 age값 검증
+        assertThat(members)
+                .extracting("age")
+                .containsExactly(30, 40);
+    }
+
+    /**
+     * 10살보다 많은 회원 조회
+     */
+    @Test
+    public void subQueryIn() {
+        QMember memberSub = new QMember("memberSub");
+        List<Member> members = queryFactory.selectFrom(member)
+                .where(
+                        member.age.in(
+                                JPAExpressions // JPAExpressions를 사용하여 서브쿼리 사용
+                                        .select(memberSub.age)
+                                        .from(memberSub)
+                                        .where(memberSub.age.gt(10))
+                        )
+                )
+                .fetch();
+
+        // 결과 목록에서 age값 검증
+        assertThat(members)
+                .extracting("age")
+                .containsExactly(20, 30, 40);
+    }
+    
+    @Test
+    public void selectSubQuery() {
+        QMember memberSub = new QMember("memberSub");
+
+        List<Tuple> members = queryFactory
+                .select(member.username,
+                        JPAExpressions
+                                .select(memberSub.age.avg())
+                                .from(memberSub))
+                .from(member)
+                .fetch();
+
+        for (Tuple tuple : members) {
+            System.out.println("tuple = " + tuple);
+        }
+    }
+
+    /**
+     * 간단한 조건
+     */
+    @Test
+    public void basicCase() {
+        List<String> result = queryFactory
+                .select(member.age
+                        .when(10).then("10살")
+                        .when(20).then("20살")
+                        .otherwise("기타"))
+                .from(member)
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+            /*
+                s = 10살
+                s = 20살
+                s = 기타
+                s = 기타
+             */
+        }
+    }
+
+    /**
+     * 복잡한 조건
+     */
+    @Test
+    public void complexCase() {
+        List<String> result = queryFactory
+                .select(new CaseBuilder()
+                        .when(member.age.between(0, 20)).then("0~20")
+                        .when(member.age.between(21, 30)).then("21~30")
+                        .otherwise("기타"))
+                .from(member)
+                .fetch();
+        for (String s : result) {
+            System.out.println("s = " + s);
+            /*
+                s = 0~20
+                s = 0~20
+                s = 21~30
+                s = 기타
+             */
+        }
+    }
 }
 
 
