@@ -3,6 +3,7 @@ package study.querydsl;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -539,6 +540,47 @@ public class QuerydslBasicTest {
                 s = 0~20
                 s = 21~30
                 s = 기타
+             */
+        }
+    }
+    
+    @Test
+    public void constant() {
+        List<Tuple> result = queryFactory
+                .select(member.username, Expressions.constant("A"))
+                .from(member)
+                .fetch();
+
+        for (Tuple tuple : result) {
+            System.out.println("tuple = " + tuple);
+            /*
+                tuple = [member1, A]
+                tuple = [member2, A]
+                tuple = [member3, A]
+                tuple = [member4, A]
+             */
+        }
+    }
+
+    @Test
+    public void concat() {
+        // concat()을 사용할때 타입이 맞지 않으면 에러가 발생함.
+        // stringValue() 메소드를 이용하여 해결이 가능하다.
+        // 문자가 아닌 다른 타입을 처리할때 사용한다.
+        // enum Type 같은경우 유용하게 사용된다.
+        // member1_10
+        List<String> result = queryFactory
+                .select(member.username.concat("-").concat(member.age.stringValue()))
+                .from(member)
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+            /*
+                s = member1-10
+                s = member2-20
+                s = member3-30
+                s = member4-40
              */
         }
     }
