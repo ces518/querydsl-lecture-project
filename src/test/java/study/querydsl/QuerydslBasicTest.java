@@ -2,6 +2,8 @@ package study.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.jpa.JPAExpressions;
@@ -12,6 +14,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.transaction.annotation.Transactional;
+import study.querydsl.dto.MemberDto;
+import study.querydsl.dto.UserDto;
 import study.querydsl.entity.*;
 
 import javax.persistence.EntityManager;
@@ -620,6 +624,94 @@ public class QuerydslBasicTest {
         // 하부 구현기술인 JPA 를 앞단에서 알 수 없도록 하는것이 좋음
         // DTO로 변환해서 내보내는것을 권장
         // Repository 내부에서만 쓰일경우 Tuple 사용
+    }
+
+    @Test
+    public void findDtoByJPQL() {
+        // new Operation 을 활용하는 방법
+        // DTO의 생성자가 호출된다.
+        List<MemberDto> result = em.createQuery("select new study.querydsl.dto.MemberDto(m.username, m.age) " +
+                        "from Member m",
+                MemberDto.class)
+                .getResultList();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+    
+    @Test
+    public void findDtoBySetter() {
+        // 프로퍼티 접근 방식
+        // setter를 활용해서 데이터를 바인딩한다.
+        List<MemberDto> result = queryFactory
+                .select(Projections.bean(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    @Test
+    public void findDtoByField() {
+        // 필드 접근 방식
+        // 필드에 다이렉트로 값을 바인딩 해준다.
+        List<MemberDto> result = queryFactory
+                .select(Projections.fields(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    @Test
+    public void findDtoByConstructor() {
+        // 생성자 사용 방식
+        // 생성자의 파라미터 순서를 맞춰주어야 함
+        List<MemberDto> result = queryFactory
+                .select(Projections.constructor(MemberDto.class,
+                        member.username,
+                        member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    @Test
+    public void findUserDto() {
+        // 필드 접근 방식
+        // 필드에 다이렉트로 값을 바인딩 해준다.
+        // DTO의 속성과 프로젝션에 정의된 명이 일치해야 값이 바인딩 된다.
+        // 만약 일치하지 않을경우 .as() 메소드를 이용해 별칭을 지정해 주어야함
+
+        QMember memberSub = new QMember("memberSub");
+
+        List<UserDto> result = queryFactory
+                .select(Projections.fields(UserDto.class,
+                        member.username.as("name"),
+
+                        // 필드 혹은 서브쿼리의 별칭을 지정해 줄때 ExpressionUtils를 사용하여 줄 수 있음
+                        ExpressionUtils.as(JPAExpressions
+                                .select(memberSub.age.max())
+                                .from(memberSub), "age"))
+                )
+                .from(member)
+                .fetch();
+
+        for (UserDto userDto: result) {
+            System.out.println("userDto = " + userDto);
+        }
     }
 }
 
