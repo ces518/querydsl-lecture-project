@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.jpa.repository.QueryHints;
 import org.springframework.transaction.annotation.Transactional;
 import study.querydsl.dto.MemberDto;
+import study.querydsl.dto.QMemberDto;
 import study.querydsl.dto.UserDto;
 import study.querydsl.entity.*;
 
@@ -712,6 +713,35 @@ public class QuerydslBasicTest {
         for (UserDto userDto: result) {
             System.out.println("userDto = " + userDto);
         }
+    }
+    
+    @Test
+    public void findDtoByQueryProjection() {
+        // 이전의 생성자 사용 방식의 단점은 런타임시 에러가 발생한다.
+        // @QueryProjection 방식은 생성자를 그대로 가져오기 때문에 타입을 안정적으로 바인딩 가능
+        // 컴파일 시점에 오류도 잡아줌
+        List<MemberDto> result = queryFactory
+                .select(new QMemberDto(member.username, member.age))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+            System.out.println("memberDto = " + memberDto);
+        }
+
+        // 단점
+        // QType을 생성해야함.
+        // MemberDto가 Querydsl에 의존적이게 된다.
+        // 보통 DTO는 여러 레이어에 걸쳐서 사용이 되는데.
+        // 순수한 DTO가 아니게 된다. (아키텍쳐 적인 문제)
+    }
+
+    @Test
+    public void distinct() {
+        List<String> result = queryFactory
+                .select(member.username).distinct()
+                .from(member)
+                .fetch();
     }
 }
 
