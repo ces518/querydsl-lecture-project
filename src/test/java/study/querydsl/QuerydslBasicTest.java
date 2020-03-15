@@ -584,6 +584,43 @@ public class QuerydslBasicTest {
              */
         }
     }
+
+    /**
+     * 프로젝션 대상이 하나일 경우
+     */
+    @Test
+    public void simpleProjection() {
+        List<String> result = queryFactory
+                .select(member.username)
+//                .select(member) member 엔티티로 조회할 경우에도 프로젝션 대상이 하나이다.
+                .from(member)
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+    }
+
+    /**
+     * 프로젝션 대상이 둘이상일 경우 (튜플)
+     */
+    @Test
+    public void tupleProjection() {
+        List<Tuple> result = queryFactory
+                .select(member.username, member.age)
+                .from(member)
+                .fetch();
+
+        for (Tuple tuple : result) {
+            String username = tuple.get(member.username);
+            Integer age = tuple.get(member.age);
+            System.out.println("username, age = " + username + " " + age);
+        }
+        // Service, Controller 까지 Tuple 타입을 알면 좋지않음
+        // 하부 구현기술인 JPA 를 앞단에서 알 수 없도록 하는것이 좋음
+        // DTO로 변환해서 내보내는것을 권장
+        // Repository 내부에서만 쓰일경우 Tuple 사용
+    }
 }
 
 
