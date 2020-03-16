@@ -852,6 +852,47 @@ public class QuerydslBasicTest {
                 .execute();
     }
 
+    @Test
+    public void sqlFunction() {
+        List<String> result = queryFactory
+                .select(Expressions.stringTemplate(
+                        "function('replace', {0}, {1}, {2})",
+                        member.username,
+                        "member",
+                        "M")) // 회원명에서 member 라는 단어를 M으로 변경하여 조회한다.
+                .from(member)
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+            /*
+            s = M1
+            s = M2
+            s = M3
+            s = M4
+             */
+        }
+        // 임의의 함수를 생성한걸 사용하고 싶다면
+        // 기존 Dialect를 상속받는 Dialect를 생성하여 함수를 등록한뒤 해당 Dialect를 사용하면 된다.
+    }
+
+    @Test
+    public void sqlFunction2() {
+        List<String> result = queryFactory
+                .select(member.username)
+                .from(member)
+                .where(member.username.eq(
+                        // 모든 DB에서 사용하는 간단한 함수(ANSI 표준함수) 들은 Querydsl에서 내장하고 있다.
+//                        Expressions.stringTemplate("function('lower', {0})", member.username)
+                        // 다음과 같이 간단하게 사용 가능
+                        member.username.lower()
+                ))
+                .fetch();
+
+        for (String s : result) {
+            System.out.println("s = " + s);
+        }
+    }
 }
 
 
