@@ -817,6 +817,41 @@ public class QuerydslBasicTest {
 
     }
 
+    @Test
+    public void bulkUpdate() {
+        // 영향을 받은 로우수를 반환
+
+        // member1 = 비회원
+        // member2 = 비회원
+        // member3 = 유지
+        // member4 = 유지
+
+        long count = queryFactory
+                .update(member)
+                .set(member.username, "비회원")
+                .where(member.age.lt(28))
+                .execute();
+
+        // 벌크연산의 문제점
+        // 영속성 컨텍스트가 아닌 DB에 바로 쿼리를 하는것이기 때문에
+        // 영속성 컨텍스트에 존재하는 데이터와 일치하지 않을 수 있음.
+        // 벌크연산 이후 flush를 해주어야 한다.
+
+        // DB에서 조회를해도, 영속성 컨텍스트에 데이터가 있다면 영속성 컨텍스트가 우선권을 가진다.
+        List<Member> result = queryFactory
+                .select(member)
+                .from(member)
+                .fetch();
+    }
+
+    @Test
+    public void bulkAdd() {
+        long count = queryFactory
+                .update(member)
+                .set(member.age, member.age.add(1))
+                .execute();
+    }
+
 }
 
 
