@@ -105,6 +105,8 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                         ageGoe(searchCondition.getAgeGoe()),
                         ageLoe(searchCondition.getAgeLoe())
                 )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
                 .fetch();
 
         // count 쿼리에서 성능최적화를 할 수있다.
@@ -146,6 +148,8 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                         ageGoe(searchCondition.getAgeGoe()),
                         ageLoe(searchCondition.getAgeLoe())
                 )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
                 .fetch();
 
         JPAQuery<Member> countQuery = queryFactory
