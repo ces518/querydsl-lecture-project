@@ -21,4 +21,7 @@ public interface MemberRepositoryCustom {
 
     // 카운트 쿼리를 별도의 쿼리로 사용
     Page<MemberTeamDto> searchPageComplex(MemberSearchCondition condition, Pageable pageable);
+
+    // 카운트 쿼리 최적화
+    Page<MemberTeamDto> searchPageComplexOptimization(MemberSearchCondition searchCondition, Pageable pageable);
 }
