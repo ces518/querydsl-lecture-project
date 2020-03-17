@@ -115,7 +115,7 @@ class MemberJpaRepositoryTest {
         searchCondition.setTeamName("teamB");
 
         // when
-        List<MemberTeamDto> result = memberJpaRepository.searchByBuilder(searchCondition);
+        List<MemberTeamDto> result = memberJpaRepository.search(searchCondition);
 
         // then
         assertThat(result)
