@@ -1,7 +1,11 @@
 package study.querydsl.repository;
 
+import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
 import study.querydsl.dto.MemberSearchCondition;
 import study.querydsl.dto.MemberTeamDto;
@@ -45,6 +49,76 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                         ageLoe(searchCondition.getAgeLoe())
                 )
                 .fetch();
+    }
+
+    @Override
+    public Page<MemberTeamDto> searchPageSimple(MemberSearchCondition searchCondition, Pageable pageable) {
+        QueryResults<MemberTeamDto> results = queryFactory
+                .select(new QMemberTeamDto(member.id.as("memberId"),
+                        member.username,
+                        member.age,
+                        team.id.as("teamId"),
+                        team.name))
+                .from(member)
+                .leftJoin(member.team, team)
+                .where(
+                        usernameEq(searchCondition.getUsername()),
+                        teamNameEq(searchCondition.getTeamName()),
+                        ageGoe(searchCondition.getAgeGoe()),
+                        ageLoe(searchCondition.getAgeLoe())
+                )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetchResults();
+
+        // fetchResults() 를 사용하면, 컨텐츠 쿼리와 카운트 쿼리가 나간다.
+        // orderBy는 카운트쿼리에서 제거됨
+        // -> 단점: 카운트 쿼리 최적화를 못한다.
+        List<MemberTeamDto> content = results.getResults();
+        long totalCount = results.getTotal();
+
+        return new PageImpl<>(content, pageable, totalCount);
+    }
+
+    /**
+     * 쿼리 자체를 분리하는 방법
+     * @param searchCondition
+     * @param pageable
+     * @return
+     */
+    @Override
+    public Page<MemberTeamDto> searchPageComplex(MemberSearchCondition searchCondition, Pageable pageable) {
+        List<MemberTeamDto> content = queryFactory
+                .select(new QMemberTeamDto(member.id.as("memberId"),
+                        member.username,
+                        member.age,
+                        team.id.as("teamId"),
+                        team.name))
+                .from(member)
+                .leftJoin(member.team, team)
+                .where(
+                        usernameEq(searchCondition.getUsername()),
+                        teamNameEq(searchCondition.getTeamName()),
+                        ageGoe(searchCondition.getAgeGoe()),
+                        ageLoe(searchCondition.getAgeLoe())
+                )
+                .fetch();
+
+        // count 쿼리에서 성능최적화를 할 수있다.
+        // 조인수를 줄이는 등..
+        long totalCount = queryFactory
+                .select(member)
+                .from(member)
+//                .leftJoin(member.team, team)
+                .where(
+                        usernameEq(searchCondition.getUsername()),
+                        teamNameEq(searchCondition.getTeamName()),
+                        ageGoe(searchCondition.getAgeGoe()),
+                        ageLoe(searchCondition.getAgeLoe())
+                )
+                .fetchCount();
+
+        return new PageImpl<>(content, pageable, totalCount);
     }
 
     private BooleanExpression usernameEq(String username) {
