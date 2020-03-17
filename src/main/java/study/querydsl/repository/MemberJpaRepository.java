@@ -1,10 +1,8 @@
 package study.querydsl.repository;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import study.querydsl.entity.Member;
-import study.querydsl.entity.QMember;
 
 import javax.persistence.EntityManager;
 import java.util.List;
