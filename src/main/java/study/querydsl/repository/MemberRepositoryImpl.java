@@ -2,11 +2,13 @@ package study.querydsl.repository;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPQLQuery;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.support.QuerydslRepositorySupport;
 import org.springframework.data.repository.support.PageableExecutionUtils;
 import org.springframework.util.StringUtils;
 import study.querydsl.dto.MemberSearchCondition;
@@ -27,11 +29,12 @@ import static study.querydsl.entity.QTeam.team;
  * Time: 22:06
  **/
 // +Impl 이라는 접미사를 사용해주어야 한다.
-public class MemberRepositoryImpl implements MemberRepositoryCustom {
+public class MemberRepositoryImpl extends QuerydslRepositorySupport implements MemberRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
 
     public MemberRepositoryImpl(EntityManager em) {
+        super(Member.class);
         this.queryFactory = new JPAQueryFactory(em);
     }
 
@@ -163,6 +166,30 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
                 );
 
         return PageableExecutionUtils.getPage(content, pageable,  countQuery::fetchCount);
+    }
+
+    public Page<MemberTeamDto> searchPageSimple2(MemberSearchCondition searchCondition, Pageable pageable) {
+
+        // Querydsl 3버전에 만들어진거라 select절이 가장 마지막에 오게된다.
+        // EntityManager도 주입을 받아줌
+        JPQLQuery<MemberTeamDto> query = from(member)
+                .leftJoin(member.team, team)
+                .where(
+                        usernameEq(searchCondition.getUsername()),
+                        teamNameEq(searchCondition.getTeamName()),
+                        ageGoe(searchCondition.getAgeGoe()),
+                        ageLoe(searchCondition.getAgeLoe())
+                )
+                .select(new QMemberTeamDto(member.id.as("memberId"),
+                        member.username,
+                        member.age,
+                        team.id.as("teamId"),
+                        team.name));
+
+        List<MemberTeamDto> content = getQuerydsl().applyPagination(pageable, query).fetch();
+        long totalCount = query.fetchCount();
+
+        return new PageImpl<>(content, pageable, totalCount);
     }
 
     private BooleanExpression usernameEq(String username) {
